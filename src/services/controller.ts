@@ -1,13 +1,13 @@
-import type { ConnectionState, RoomFeed, RoomState } from "./api";
-import { Observable, type ReadOnlyObservable } from "./reactive";
+import type { ConnectionState, RoomFeed, RoomState } from './api';
+import { Observable, type ReadOnlyObservable } from './reactive';
 
-type ControllerState = "idle" | "connected";
+type ControllerState = 'idle' | 'connected';
 
 class Controller {
 	public feed: RoomFeed | null = null;
 	private video: HTMLVideoElement;
 	private ignoreUntil = 0;
-	private _state = new Observable<ControllerState>("idle");
+	private _state = new Observable<ControllerState>('idle');
 
 	get state(): ReadOnlyObservable<ControllerState> {
 		return this._state;
@@ -34,10 +34,10 @@ class Controller {
 
 	private handleStateChange(state: RoomState) {
 		this.ignoreNext();
-		if (state.state === "playing") {
+		if (state.state === 'playing') {
 			this.video.currentTime = state.progress;
-			this.video.play().catch((error) => {
-				console.error("Error playing video:", error);
+			this.video.play().catch(error => {
+				console.error('Error playing video:', error);
 			});
 		} else {
 			this.video.currentTime = state.progress;
@@ -52,7 +52,7 @@ class Controller {
 		if (!this.feed) {
 			return;
 		}
-		this.feed.setPlayState("playing", this.video.currentTime);
+		this.feed.setPlayState('playing', this.video.currentTime);
 	}
 
 	private onPause() {
@@ -62,7 +62,7 @@ class Controller {
 		if (!this.feed) {
 			return;
 		}
-		this.feed.setPlayState("paused", this.video.currentTime);
+		this.feed.setPlayState('paused', this.video.currentTime);
 	}
 
 	private onSeek() {
@@ -76,9 +76,9 @@ class Controller {
 	}
 
 	private handleFeedConnectionStateChange(state: ConnectionState) {
-		if (state === "closed") {
+		if (state === 'closed') {
 			this.feed = null;
-			this._state.set("idle");
+			this._state.set('idle');
 		}
 	}
 
@@ -96,21 +96,21 @@ class Controller {
 	}
 
 	setVideo(video: HTMLVideoElement) {
-		this.video.removeEventListener("play", this.#onPlay);
-		this.video.removeEventListener("pause", this.#onPause);
-		this.video.removeEventListener("seeked", this.#onSeek);
+		this.video.removeEventListener('play', this.#onPlay);
+		this.video.removeEventListener('pause', this.#onPause);
+		this.video.removeEventListener('seeked', this.#onSeek);
 
 		this.video = video;
 
-		this.video.addEventListener("play", this.#onPlay);
-		this.video.addEventListener("pause", this.#onPause);
-		this.video.addEventListener("seeked", this.#onSeek);
+		this.video.addEventListener('play', this.#onPlay);
+		this.video.addEventListener('pause', this.#onPause);
+		this.video.addEventListener('seeked', this.#onSeek);
 	}
 
 	destroy() {
-		this.video.removeEventListener("play", this.#onPlay);
-		this.video.removeEventListener("pause", this.#onPause);
-		this.video.removeEventListener("seeked", this.#onSeek);
+		this.video.removeEventListener('play', this.#onPlay);
+		this.video.removeEventListener('pause', this.#onPause);
+		this.video.removeEventListener('seeked', this.#onSeek);
 		if (this.feed) {
 			this.feed.close();
 		}

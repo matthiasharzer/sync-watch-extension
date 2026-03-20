@@ -1,10 +1,10 @@
-import { Message } from "./messages";
-import { createRoom, RoomFeed } from "./services/api";
-import { Controller } from "./services/controller";
-import type { AnyMessage } from "./types";
+import { Message } from './messages';
+import { createRoom, RoomFeed } from './services/api';
+import { Controller } from './services/controller';
+import type { AnyMessage } from './types';
 
 const $ = document.querySelector.bind(document);
-const videoElement = $("video") as HTMLVideoElement;
+const videoElement = $('video') as HTMLVideoElement;
 const controller: Controller = new Controller(videoElement);
 
 const handleCreateRoom = async () => {
@@ -16,11 +16,11 @@ const handleCreateRoom = async () => {
 		return { success: true, roomId };
 	} catch (error) {
 		if (error instanceof Error) {
-			console.error("Error creating room:", error);
+			console.error('Error creating room:', error);
 			return { success: false, error: error.message };
 		}
-		console.error("Unknown error creating room:", error);
-		return { success: false, error: "Unknown error" };
+		console.error('Unknown error creating room:', error);
+		return { success: false, error: 'Unknown error' };
 	}
 };
 
@@ -28,25 +28,23 @@ const handleJoinRoom = async (roomId: string) => {
 	try {
 		const subscription = new RoomFeed(roomId);
 		controller.setFeed(subscription);
-		console.log("Joined room with ID:", roomId);
 		return { success: true };
 	} catch (error) {
 		if (error instanceof Error) {
-			console.error("Error joining room:", error);
+			console.error('Error joining room:', error);
 			return { success: false, error: error.message };
 		}
-		console.error("Unknown error joining room:", error);
-		return { success: false, error: "Unknown error" };
+		console.error('Unknown error joining room:', error);
+		return { success: false, error: 'Unknown error' };
 	}
 };
 
 const handleLeaveRoom = async () => {
 	if (controller.feed) {
 		controller.feed.close();
-		console.log("Left room with ID:", controller.roomId);
 		return { success: true };
 	}
-	return { success: false, error: "Not in a room" };
+	return { success: false, error: 'Not in a room' };
 };
 
 const handleGetCurrentRoom = async () => {
@@ -57,12 +55,8 @@ const handleGetCurrentRoom = async () => {
 };
 
 const handleMessage = async (message: AnyMessage) => {
-	if (
-		typeof message !== "object" ||
-		message === null ||
-		typeof message.action !== "string"
-	) {
-		console.warn("Received invalid message:", message);
+	if (typeof message !== 'object' || message === null || typeof message.action !== 'string') {
+		console.warn('Received invalid message:', message);
 		return;
 	}
 
@@ -70,18 +64,18 @@ const handleMessage = async (message: AnyMessage) => {
 		case Message.CreateRoom:
 			return await handleCreateRoom();
 		case Message.JoinRoom:
-			if (typeof message.roomId === "string") {
+			if (typeof message.roomId === 'string') {
 				return await handleJoinRoom(message.roomId);
 			} else {
-				return { success: false, error: "Invalid roomId" };
+				return { success: false, error: 'Invalid roomId' };
 			}
 		case Message.LeaveRoom:
 			return await handleLeaveRoom();
 		case Message.GetCurrentRoom:
 			return await handleGetCurrentRoom();
 		default:
-			console.warn("Unknown action:", message.action);
-			return { success: false, error: "Unknown action" };
+			console.warn('Unknown action:', message.action);
+			return { success: false, error: 'Unknown action' };
 	}
 };
 
@@ -96,27 +90,27 @@ const sendMessage = <M, R>(message: M, callback?: (response: R) => void) => {
 const init = () => {
 	chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
 		handleMessage(message)
-			.then((response) => {
+			.then(response => {
 				sendResponse(response);
 			})
-			.catch((error) => {
-				console.error("Error handling message:", error);
+			.catch(error => {
+				console.error('Error handling message:', error);
 				sendResponse({
 					success: false,
-					error: error instanceof Error ? error.message : "Unknown error",
+					error: error instanceof Error ? error.message : 'Unknown error',
 				});
 			});
 		return true; // Indicate that we will send a response asynchronously
 	});
 
-	controller.state.subscribe((state) => {
-		if (state === "idle") {
-			sendMessage({ action: "clearRoom" });
+	controller.state.subscribe(state => {
+		if (state === 'idle') {
+			sendMessage({ action: 'clearRoom' });
 		}
 	}, false);
 
 	const urlParams = new URLSearchParams(window.location.search);
-	const initialRoomId = urlParams.get("roomId");
+	const initialRoomId = urlParams.get('roomId');
 	if (!initialRoomId) {
 		return;
 	}
@@ -125,11 +119,11 @@ const init = () => {
 		const feed = new RoomFeed(initialRoomId);
 		controller.setFeed(feed);
 		chrome.runtime.sendMessage({
-			action: "setRoomId",
+			action: 'setRoomId',
 			roomId: initialRoomId,
 		});
 	} catch (error) {
-		console.error("Error joining room from URL:", error);
+		console.error('Error joining room from URL:', error);
 	}
 };
 

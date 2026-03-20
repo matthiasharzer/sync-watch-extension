@@ -1,36 +1,36 @@
-import { Message } from "./messages";
-import type { AnyMessage } from "./types";
+import { Message } from './messages';
+import type { AnyMessage } from './types';
 
 const $ = document.querySelector.bind(document);
 
-const createRoomButton = $("#create-room-button") as HTMLButtonElement;
+const createRoomButton = $('#create-room-button') as HTMLButtonElement;
 
-const disconnectedContainer = $("#disconnected") as HTMLDivElement;
-const connectedContainer = $("#connected") as HTMLDivElement;
+const disconnectedContainer = $('#disconnected') as HTMLDivElement;
+const connectedContainer = $('#connected') as HTMLDivElement;
 
-const roomIdInput = $("#room-id-input") as HTMLInputElement;
-const joinRoomButton = $("#join-room-button") as HTMLButtonElement;
-const roomIdLabel = $("#room-id") as HTMLLabelElement;
+const roomIdInput = $('#room-id-input') as HTMLInputElement;
+const joinRoomButton = $('#join-room-button') as HTMLButtonElement;
+const roomIdLabel = $('#room-id') as HTMLLabelElement;
 
-const roomUrlInput = $("#room-url-input") as HTMLInputElement;
-const leaveRoomButton = $("#leave-room-button") as HTMLButtonElement;
-const copyRoomUrlButton = $("#copy-room-url-button") as HTMLButtonElement;
-const errorMessage = $("#error-message") as HTMLParagraphElement;
+const roomUrlInput = $('#room-url-input') as HTMLInputElement;
+const leaveRoomButton = $('#leave-room-button') as HTMLButtonElement;
+const copyRoomUrlButton = $('#copy-room-url-button') as HTMLButtonElement;
+const errorMessage = $('#error-message') as HTMLParagraphElement;
 
 const getActiveTab = () =>
-	new Promise<chrome.tabs.Tab>((resolve) => {
-		chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+	new Promise<chrome.tabs.Tab>(resolve => {
+		chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
 			resolve(tabs[0]);
 		});
 	});
 
-const setStatus = (status: "connected" | "disconnected") => {
-	if (status === "connected") {
-		disconnectedContainer.classList.add("hidden");
-		connectedContainer.classList.remove("hidden");
+const setStatus = (status: 'connected' | 'disconnected') => {
+	if (status === 'connected') {
+		disconnectedContainer.classList.add('hidden');
+		connectedContainer.classList.remove('hidden');
 	} else {
-		disconnectedContainer.classList.remove("hidden");
-		connectedContainer.classList.add("hidden");
+		disconnectedContainer.classList.remove('hidden');
+		connectedContainer.classList.add('hidden');
 	}
 };
 
@@ -39,9 +39,9 @@ const setError = (message: string) => {
 };
 
 const setRoomId = (roomId: string) => {
-	getActiveTab().then((tab) => {
-		const url = new URL(tab.url || "");
-		url.searchParams.set("roomId", roomId);
+	getActiveTab().then(tab => {
+		const url = new URL(tab.url || '');
+		url.searchParams.set('roomId', roomId);
 		roomUrlInput.value = url.toString();
 		roomUrlInput.scrollLeft = roomUrlInput.scrollWidth;
 	});
@@ -50,7 +50,7 @@ const setRoomId = (roomId: string) => {
 };
 
 const handleClearRoom = () => {
-	setStatus("disconnected");
+	setStatus('disconnected');
 };
 
 const handleSetRoomId = (roomId: string) => {
@@ -58,12 +58,8 @@ const handleSetRoomId = (roomId: string) => {
 };
 
 const handleMessage = (message: AnyMessage) => {
-	if (
-		typeof message !== "object" ||
-		message === null ||
-		typeof message.action !== "string"
-	) {
-		console.warn("Received invalid message:", message);
+	if (typeof message !== 'object' || message === null || typeof message.action !== 'string') {
+		console.warn('Received invalid message:', message);
 		return;
 	}
 
@@ -72,22 +68,19 @@ const handleMessage = (message: AnyMessage) => {
 			handleClearRoom();
 			break;
 		case Message.SetRoomId:
-			if (typeof message.roomId === "string") {
+			if (typeof message.roomId === 'string') {
 				handleSetRoomId(message.roomId);
 			} else {
-				console.warn("Received invalid roomId:", message.roomId);
+				console.warn('Received invalid roomId:', message.roomId);
 			}
 			break;
 	}
 };
 
-const sendMessage = <M, R = AnyMessage>(
-	message: M,
-	callback?: (response: R) => void,
-) => {
-	getActiveTab().then((tab) => {
+const sendMessage = <M, R = AnyMessage>(message: M, callback?: (response: R) => void) => {
+	getActiveTab().then(tab => {
 		if (!tab?.id) {
-			console.error("No active tab found");
+			console.error('No active tab found');
 			return;
 		}
 		if (callback) {
@@ -99,54 +92,52 @@ const sendMessage = <M, R = AnyMessage>(
 };
 
 const init = () => {
-	setStatus("disconnected");
-	sendMessage({ action: Message.GetCurrentRoom }, (response) => {
+	setStatus('disconnected');
+	sendMessage({ action: Message.GetCurrentRoom }, response => {
 		if (response?.roomId) {
-			setStatus("connected");
+			setStatus('connected');
 			setRoomId(response.roomId);
 		}
 	});
 
-	chrome.runtime.onMessage.addListener((message) => {
+	chrome.runtime.onMessage.addListener(message => {
 		handleMessage(message);
 	});
 
-	createRoomButton.addEventListener("click", () => {
-		sendMessage({ action: Message.CreateRoom }, (response) => {
-			setStatus("connected");
+	createRoomButton.addEventListener('click', () => {
+		sendMessage({ action: Message.CreateRoom }, response => {
+			setStatus('connected');
 			if (response?.roomId) {
 				setRoomId(response.roomId);
 			}
 		});
 	});
 
-	joinRoomButton.addEventListener("click", () => {
+	joinRoomButton.addEventListener('click', () => {
 		const roomId = roomIdInput.value.trim();
 		if (roomId) {
-			sendMessage({ action: Message.JoinRoom, roomId }, (response) => {
+			sendMessage({ action: Message.JoinRoom, roomId }, response => {
 				if (response?.success) {
-					setStatus("connected");
+					setStatus('connected');
 					setRoomId(roomId);
 				} else {
-					setError(
-						"Failed to join room. Please check the Room ID and try again.",
-					);
+					setError('Failed to join room. Please check the Room ID and try again.');
 				}
 			});
 		} else {
-			setError("Please enter a valid Room ID.");
+			setError('Please enter a valid Room ID.');
 		}
 	});
 
-	leaveRoomButton.addEventListener("click", () => {
+	leaveRoomButton.addEventListener('click', () => {
 		sendMessage({ action: Message.LeaveRoom }, () => {
 			handleClearRoom();
 		});
 	});
 
-	copyRoomUrlButton.addEventListener("click", () => {
+	copyRoomUrlButton.addEventListener('click', () => {
 		roomUrlInput.select();
-		document.execCommand("copy");
+		document.execCommand('copy');
 	});
 };
 

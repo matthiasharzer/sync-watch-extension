@@ -1,4 +1,3 @@
-
 type Subscriber<T> = (value: T) => void;
 type Unsubscribe = () => void;
 
