@@ -14,7 +14,13 @@
 		}
 	],
 	"permissions": ["activeTab"],
-	"host_permissions": ["*://www.crunchyroll.com/*", "*://rt-sync.azurewebsites.net/*"],
+	"host_permissions": [
+		"*://www.w3schools.com/*",
+		"*://developer.chrome.com/*",
+		"*://www.crunchyroll.com/*",
+		"*://static.crunchyroll.com/*",
+		"*://sync-watch.taptwice.dev/*"
+	],
 	"action": {
 		"default_popup": "popup.html",
 		"default_icon": {

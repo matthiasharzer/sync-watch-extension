@@ -40,6 +40,10 @@ const setError = (message: string) => {
 
 const setRoomId = (roomId: string) => {
 	getActiveTab().then(tab => {
+		if (!tab?.url) {
+			roomUrlInput.value = roomId;
+			return;
+		}
 		const url = new URL(tab.url || '');
 		url.searchParams.set('roomId', roomId);
 		roomUrlInput.value = url.toString();
@@ -106,8 +110,8 @@ const init = () => {
 
 	createRoomButton.addEventListener('click', () => {
 		sendMessage({ action: Message.CreateRoom }, response => {
-			setStatus('connected');
 			if (response?.roomId) {
+				setStatus('connected');
 				setRoomId(response.roomId);
 			}
 		});

@@ -1,6 +1,6 @@
 import { Observable, type ReadOnlyObservable } from './reactive';
 
-const API_ENDPOINT = 'sync-watch.taptwice.dev/api/v1/';
+const API_ENDPOINT = 'sync-watch.taptwice.dev/api/v1';
 const WS_ENDPOINT = `wss://${API_ENDPOINT}`;
 const HTTP_ENDPOINT = `https://${API_ENDPOINT}`;
 
@@ -100,13 +100,33 @@ class RoomFeed extends Observable<RoomState> {
 	}
 
 	private sendMessage(message: Omit<SyncMessage, 'id' | 'timestamp'>) {
+		if (this.ws.readyState !== WebSocket.OPEN) {
+			console.warn('WebSocket is not open. Cannot send message:', message);
+			return;
+		}
 		const messageId = this.generateId();
 		this.sentMessageIds.add(messageId);
 		this.ws.send(JSON.stringify({ ...message, id: messageId, timestamp: Date.now() }));
 	}
 
+	private parseMessage(data: string): SyncMessage | null {
+		try {
+			const message = JSON.parse(data);
+			if (validateMessage(message)) {
+				return message;
+			} else {
+				console.warn('Received invalid message:', message);
+				return null;
+			}
+		} catch (error) {
+			console.error('Error parsing message:', error);
+			return null;
+		}
+	}
+
 	private onmessage(event: MessageEvent) {
-		const data = JSON.parse(event.data);
+		const data = this.parseMessage(event.data);
+		if (!data) return;
 		if (!validateMessage(data)) {
 			console.warn('Received invalid message:', data);
 			return;

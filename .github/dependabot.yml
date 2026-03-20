@@ -20,6 +20,6 @@ updates:
       interval: weekly
     open-pull-requests-limit: 10
     labels:
-    - Dependencies
+      - Dependencies
     commit-message:
       prefix: chore

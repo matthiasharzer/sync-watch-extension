@@ -1,6 +1,6 @@
 @font-face {
 	font-family: "Karla";
-	src: url("../../public/fonts/Karla.ttf") format("truetype");
+	src: url("./fonts/Karla.ttf") format("truetype");
 }
 
 body {
@@ -14,7 +14,7 @@ body {
 	--primary-color: #9938e7;
 	--on-primary-color: #ffffff;
 	--background-color: #f0f0f0;
-	--background-colro-alt: #e0e0e0;
+	--background-color-alt: #e0e0e0;
 	--text-color: #333;
 }
 
@@ -23,7 +23,7 @@ body {
 		--primary-color: #9938e7;
 		--on-primary-color: #ffffff;
 		--background-color: #121212;
-		--background-colro-alt: #1e1e1e;
+		--background-color-alt: #1e1e1e;
 		--text-color: #f0f0f0;
 	}
 }

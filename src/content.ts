@@ -105,7 +105,7 @@ const init = () => {
 
 	controller.state.subscribe(state => {
 		if (state === 'idle') {
-			sendMessage({ action: 'clearRoom' });
+			sendMessage({ action: Message.ClearRoom });
 		}
 	}, false);
 
@@ -119,7 +119,7 @@ const init = () => {
 		const feed = new RoomFeed(initialRoomId);
 		controller.setFeed(feed);
 		chrome.runtime.sendMessage({
-			action: 'setRoomId',
+			action: Message.SetRoomId,
 			roomId: initialRoomId,
 		});
 	} catch (error) {
