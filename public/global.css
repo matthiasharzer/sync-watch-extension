@@ -1,0 +1,29 @@
+@font-face {
+	font-family: "Karla";
+	src: url("../../public/fonts/Karla.ttf") format("truetype");
+}
+
+body {
+	font-family: Karla, system-ui, Avenir, Helvetica, Arial, sans-serif;
+	background-color: var(--background-color);
+	color: var(--text-color);
+	width: 300px;
+}
+
+:root {
+	--primary-color: #9938e7;
+	--on-primary-color: #ffffff;
+	--background-color: #f0f0f0;
+	--background-colro-alt: #e0e0e0;
+	--text-color: #333;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--primary-color: #9938e7;
+		--on-primary-color: #ffffff;
+		--background-color: #121212;
+		--background-colro-alt: #1e1e1e;
+		--text-color: #f0f0f0;
+	}
+}

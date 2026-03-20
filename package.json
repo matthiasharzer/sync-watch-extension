@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "build": "esbuild --bundle --outdir=public/dist --keep-names src/*.ts",
+    "watch": "esbuild --bundle --outdir=public/dist --keep-names --sourcemap --watch src/*.ts"
+  },
+  "private": true,
+  "devDependencies": {
+    "@types/chrome": "0.1.38",
+    "esbuild": "0.27.3"
+  }
+}
