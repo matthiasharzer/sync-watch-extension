@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel="stylesheet" type="text/css" href="popup.css">
+</head>
+
+<body>
+  <div class="wrapper">
+    <h1 id="title">Sync Watch</h1>
+		<div class="page disconnected " id="disconnected">
+			<button class="create-room-button" id="create-room-button">
+				Create Room
+			</button>
+			<div class="divider">
+				<div class="line"></div>
+				<p class="or">or</p>
+				<div class="line"></div>
+			</div>
+			<div class="join-room-container">
+				<input id="room-id-input" placeholder="Enter Room ID" />
+				<button id="join-room-button">Join Room</button>
+			</div>
+		</div>
+    <div class="page connected " id="connected">
+			<p id="room-id-display">Room ID: <span id="room-id"></span></p>
+			<div class="room-url-container">
+				<input id="room-url-input" placeholder="Room-URL" />
+				<button id="copy-room-url-button">Copy</button>
+			</div>
+			<button id="leave-room-button">Leave Room</button>
+		</div>
+		<p class="error-message" id="error-message">
+
+		</p>
+  </div>
+</body>
+<script src="dist/popup.js"></script>
+
+</html>

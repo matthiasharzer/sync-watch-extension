@@ -1,0 +1,17 @@
+{
+	"name": "sync-watch-extension",
+	"version": "1.0.0",
+	"scripts": {
+		"build": "esbuild --bundle --outdir=public/dist --keep-names src/*.ts",
+		"watch": "esbuild --bundle --outdir=public/dist --keep-names --sourcemap --watch src/*.ts",
+		"format": "biome check --write",
+		"typecheck": "tsc --noEmit",
+		"analyze": "biome check --error-on-warnings"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.4",
+		"@types/chrome": "0.1.38",
+		"esbuild": "0.27.3",
+		"typescript": "5.9.3"
+	}
+}
