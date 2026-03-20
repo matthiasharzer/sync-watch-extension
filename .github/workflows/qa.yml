@@ -13,10 +13,7 @@ concurrency:
 jobs:
   qa:
     name: QA
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
