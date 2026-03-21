@@ -91,18 +91,17 @@ const sendMessage = <M, R>(message: M, callback?: (response: R) => void) => {
 
 const findAndSetVideoElement = () => {
 	videoElement = $('video') as HTMLVideoElement | null;
-	if (videoElement) {
-		controller.setVideo(videoElement);
+	if (!videoElement) {
+		setTimeout(findAndSetVideoElement, 1000);
+		return;
 	}
 
-	setTimeout(findAndSetVideoElement, 1000);
+	controller.setVideo(videoElement);
 };
 
 const init = () => {
 	findAndSetVideoElement();
-	if (videoElement) {
-		controller.setVideo(videoElement);
-	}
+
 	chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
 		handleMessage(message)
 			.then(response => {
