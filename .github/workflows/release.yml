@@ -57,7 +57,7 @@ jobs:
         run: |
           NEW_VERSION="${{ needs.get-next-version.outputs.version }}"
 
-          jq '.version = "'"$NEW_VERSION"'"' public/manifest.json > temp.json && mv temp.json public/manifest.json
+          sed -i -E 's/("version"[[:space:]]*:[[:space:]]*")[^"]+"/\1'"$NEW_VERSION"'"/' public/manifest.json
 
           echo "Bumped manifest version to $NEW_VERSION"
       - name: Commit and Push version bump
