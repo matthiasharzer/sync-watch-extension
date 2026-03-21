@@ -68,7 +68,7 @@ jobs:
           git add public/manifest.json
 
           if ! git diff-index --quiet HEAD; then
-            git commit -m "chore: bump version to ${{ needs.get-next-version.outputs.version }}"
+            git commit -m "chore: bump version to ${{ needs.get-next-version.outputs.version }} [skip ci]"
             git push
           else
             echo "No changes to commit."
