@@ -40,6 +40,8 @@ jobs:
     steps:
       - name: Clone repository
         uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.FORCE_PUSH_TOKEN }}
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
@@ -55,7 +57,7 @@ jobs:
         run: |
           NEW_VERSION="${{ needs.get-next-version.outputs.version }}"
 
-          jq '.version = "'"$NEW_VERSION"'"' public/manifest.json > temp.json && mv temp.json public/manifest.json
+          sed -i -E 's/("version"[[:space:]]*:[[:space:]]*")[^"]+"/\1'"$NEW_VERSION"'"/' public/manifest.json
 
           echo "Bumped manifest version to $NEW_VERSION"
       - name: Commit and Push version bump
@@ -66,7 +68,7 @@ jobs:
           git add public/manifest.json
 
           if ! git diff-index --quiet HEAD; then
-            git commit -m "chore: bump version to ${{ needs.get-next-version.outputs.version }}"
+            git commit -m "chore: bump version to ${{ needs.get-next-version.outputs.version }} [skip ci]"
             git push
           else
             echo "No changes to commit."

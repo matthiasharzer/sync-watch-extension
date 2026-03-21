@@ -5,7 +5,7 @@ type ControllerState = 'idle' | 'connected';
 
 class Controller {
 	public feed: RoomFeed | null = null;
-	private video: HTMLVideoElement;
+	private _video: HTMLVideoElement | null = null;
 	private ignoreUntil = 0;
 	private _state = new Observable<ControllerState>('idle');
 
@@ -13,19 +13,22 @@ class Controller {
 		return this._state;
 	}
 
+	private get video() {
+		if (!this._video) {
+			throw new Error('Video element not set');
+		}
+		return this._video;
+	}
+
 	#onPlay = this.onPlay.bind(this);
 	#onPause = this.onPause.bind(this);
 	#onSeek = this.onSeek.bind(this);
 	#handleStateChange = this.handleStateChange.bind(this);
 	#handleFeedConnectionStateChange = this.handleFeedConnectionStateChange.bind(this);
-
-	constructor(video: HTMLVideoElement) {
-		this.video = video;
-		this.setVideo(video);
-	}
+	#lastSeekTime = 0;
 
 	private ignoreNext() {
-		this.ignoreUntil = Date.now() + 50;
+		this.ignoreUntil = Date.now() + 150;
 	}
 
 	private isIgnored() {
@@ -72,6 +75,10 @@ class Controller {
 		if (!this.feed) {
 			return;
 		}
+		if (Math.abs(this.video.currentTime - this.#lastSeekTime) < 0.5) {
+			return;
+		}
+		this.#lastSeekTime = this.video.currentTime;
 		this.feed.setProgress(this.video.currentTime);
 	}
 
@@ -91,16 +98,19 @@ class Controller {
 			this.feed.close();
 		}
 		this.feed = feed;
+		this.feed.setProgress(this.video.currentTime);
 		this.feed.subscribe(this.#handleStateChange, true);
 		this.feed.connectionState.subscribe(this.#handleFeedConnectionStateChange, true);
 	}
 
 	setVideo(video: HTMLVideoElement) {
-		this.video.removeEventListener('play', this.#onPlay);
-		this.video.removeEventListener('pause', this.#onPause);
-		this.video.removeEventListener('seeked', this.#onSeek);
+		if (this._video) {
+			this._video.removeEventListener('play', this.#onPlay);
+			this._video.removeEventListener('pause', this.#onPause);
+			this._video.removeEventListener('seeked', this.#onSeek);
+		}
 
-		this.video = video;
+		this._video = video;
 
 		this.video.addEventListener('play', this.#onPlay);
 		this.video.addEventListener('pause', this.#onPause);
@@ -108,9 +118,11 @@ class Controller {
 	}
 
 	destroy() {
-		this.video.removeEventListener('play', this.#onPlay);
-		this.video.removeEventListener('pause', this.#onPause);
-		this.video.removeEventListener('seeked', this.#onSeek);
+		if (this._video) {
+			this._video.removeEventListener('play', this.#onPlay);
+			this._video.removeEventListener('pause', this.#onPause);
+			this._video.removeEventListener('seeked', this.#onSeek);
+		}
 		if (this.feed) {
 			this.feed.close();
 		}
