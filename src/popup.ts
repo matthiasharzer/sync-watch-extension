@@ -103,6 +103,13 @@ const init = () => {
 			setRoomId(response.roomId);
 		}
 	});
+	sendMessage({ action: Message.HasVideoElement }, response => {
+		if (!response?.hasVideo) {
+			setError(
+				'No video element found on the page. Please navigate to a page with a video and try again.',
+			);
+		}
+	});
 
 	chrome.runtime.onMessage.addListener(message => {
 		handleMessage(message);

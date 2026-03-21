@@ -4,8 +4,8 @@ import { Controller } from './services/controller';
 import type { AnyMessage } from './types';
 
 const $ = document.querySelector.bind(document);
-const videoElement = $('video') as HTMLVideoElement;
-const controller: Controller = new Controller(videoElement);
+let videoElement = $('video') as HTMLVideoElement | null;
+const controller: Controller = new Controller();
 
 const handleCreateRoom = async () => {
 	try {
@@ -73,6 +73,8 @@ const handleMessage = async (message: AnyMessage) => {
 			return await handleLeaveRoom();
 		case Message.GetCurrentRoom:
 			return await handleGetCurrentRoom();
+		case Message.HasVideoElement:
+			return { hasVideo: !!videoElement };
 		default:
 			console.warn('Unknown action:', message.action);
 			return { success: false, error: 'Unknown action' };
@@ -87,7 +89,19 @@ const sendMessage = <M, R>(message: M, callback?: (response: R) => void) => {
 	}
 };
 
+const findAndSetVideoElement = () => {
+	videoElement = $('video') as HTMLVideoElement | null;
+	if (!videoElement) {
+		setTimeout(findAndSetVideoElement, 1000);
+		return;
+	}
+
+	controller.setVideo(videoElement);
+};
+
 const init = () => {
+	findAndSetVideoElement();
+
 	chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
 		handleMessage(message)
 			.then(response => {

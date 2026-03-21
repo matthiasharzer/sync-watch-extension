@@ -5,6 +5,7 @@ const Message = {
 	GetCurrentRoom: 'getCurrentRoom',
 	ClearRoom: 'clearRoom',
 	SetRoomId: 'setRoomId',
+	HasVideoElement: 'hasVideoElement',
 };
 
 export { Message };
