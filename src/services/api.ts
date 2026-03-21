@@ -208,4 +208,4 @@ class RoomFeed extends Observable<RoomState> {
 	}
 }
 
-export { createRoom, RoomFeed, type RoomState, type ConnectionState };
+export { type ConnectionState, createRoom, RoomFeed, type RoomState };

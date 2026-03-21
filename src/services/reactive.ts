@@ -77,5 +77,5 @@ class Observable<T> implements ReadWriteObservable<T> {
 	}
 }
 
-export { Observable };
 export type { ReadOnlyObservable, ReadWriteObservable, Subscriber, Unsubscribe };
+export { Observable };
