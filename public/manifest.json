@@ -1,39 +1,35 @@
 {
-  "name": "Sync Watch",
-  "version": "0.1.1",
-  "description": "Synchronize Video Playback",
-  "content_scripts": [
-    {
-      "matches": [
-        "*://www.w3schools.com/*",
-        "*://developer.chrome.com/*",
-        "*://www.crunchyroll.com/*",
-        "*://static.crunchyroll.com/*"
-      ],
-      "js": [
-        "dist/content.js"
-      ]
-    }
-  ],
-  "permissions": [
-    "activeTab"
-  ],
-  "host_permissions": [
-    "*://www.w3schools.com/*",
-    "*://developer.chrome.com/*",
-    "*://www.crunchyroll.com/*",
-    "*://static.crunchyroll.com/*",
-    "*://sync-watch.taptwice.dev/*"
-  ],
-  "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "128": "images/favicon.png"
-    }
-  },
-  "icons": {
-    "128": "images/favicon.png"
-  },
-  "manifest_version": 3,
-  "minimum_chrome_version": "116"
+	"name": "Sync Watch",
+	"version": "0.1.1",
+	"description": "Synchronize Video Playback",
+	"content_scripts": [
+		{
+			"matches": [
+				"*://www.w3schools.com/*",
+				"*://developer.chrome.com/*",
+				"*://www.crunchyroll.com/*",
+				"*://static.crunchyroll.com/*"
+			],
+			"js": ["dist/content.js"]
+		}
+	],
+	"permissions": ["activeTab"],
+	"host_permissions": [
+		"*://www.w3schools.com/*",
+		"*://developer.chrome.com/*",
+		"*://www.crunchyroll.com/*",
+		"*://static.crunchyroll.com/*",
+		"*://sync-watch.taptwice.dev/*"
+	],
+	"action": {
+		"default_popup": "popup.html",
+		"default_icon": {
+			"128": "images/favicon.png"
+		}
+	},
+	"icons": {
+		"128": "images/favicon.png"
+	},
+	"manifest_version": 3,
+	"minimum_chrome_version": "116"
 }
