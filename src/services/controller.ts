@@ -107,7 +107,6 @@ class Controller {
 			this.feed.close();
 		}
 		this.feed = feed;
-		this.feed.setProgress(this.video.currentTime);
 		this.feed.subscribe(this.#handleFeed, false);
 		this.feed.connectionState.subscribe(this.#handleFeedConnectionStateChange, true);
 	}
