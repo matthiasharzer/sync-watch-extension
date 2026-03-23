@@ -1,10 +1,18 @@
 import { Message } from './messages';
 import { createRoom, RoomFeed } from './services/api';
 import { Controller } from './services/controller';
+import { CrunchyrollVideoSyncStrategy } from './services/strategies/crunchyroll';
+import { DefaultVideoPlayerStrategy } from './services/strategies/default';
+import type { SyncStrategy } from './services/strategies/strategy';
 import type { AnyMessage } from './types';
 
 const $ = document.querySelector.bind(document);
 let videoElement = $('video') as HTMLVideoElement | null;
+
+const customStrategies: Record<string, SyncStrategy> = {
+	'\\w*\\.?crunchyroll\\.com': new CrunchyrollVideoSyncStrategy(),
+};
+
 const controller: Controller = new Controller();
 
 const handleCreateRoom = async () => {
@@ -99,8 +107,22 @@ const findAndSetVideoElement = () => {
 	controller.setVideo(videoElement);
 };
 
+const getStrategyForCurrentSite = (): SyncStrategy => {
+	const hostname = window.location.hostname;
+	for (const pattern in customStrategies) {
+		const regex = new RegExp(pattern);
+		if (regex.test(hostname)) {
+			return customStrategies[pattern];
+		}
+	}
+
+	return new DefaultVideoPlayerStrategy();
+};
+
 const init = () => {
 	findAndSetVideoElement();
+	const strategy = getStrategyForCurrentSite();
+	controller.setStrategy(strategy);
 
 	chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
 		handleMessage(message)

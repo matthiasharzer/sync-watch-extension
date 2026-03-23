@@ -1,4 +1,4 @@
-import { Observable, type ReadOnlyObservable } from './reactive';
+import { Feed, Observable, type ReadOnlyFeed, type Subscriber, type Unsubscribe } from './feed';
 
 const API_ENDPOINT = 'sync-watch.taptwice.dev/api/v1';
 const WS_ENDPOINT = `wss://${API_ENDPOINT}`;
@@ -26,11 +26,23 @@ interface Message<TMessage, TData = null> {
 	data: TData;
 }
 
-type PlayStateMessage = Message<'play_state', { state: 'playing' | 'paused'; progress: number }>;
+type PlayStateMessage = Message<'play_state', { state: 'playing' | 'paused' }>;
 type ProgressMessage = Message<'progress', { progress: number }>;
 type RequestSyncMessage = Message<'request_sync', null>;
 
 type SyncMessage = PlayStateMessage | ProgressMessage | RequestSyncMessage;
+
+interface PlayEvent {
+	type: 'play';
+}
+interface PauseEvent {
+	type: 'pause';
+}
+interface SeekEvent {
+	type: 'seek';
+	progress: number;
+}
+type RoomEvent = PlayEvent | PauseEvent | SeekEvent;
 
 const createRoom = async (): Promise<string> => {
 	try {
@@ -57,8 +69,7 @@ const validateMessage = (message: any): message is SyncMessage => {
 			return (
 				message.data &&
 				typeof message.data.state === 'string' &&
-				(message.data.state === 'playing' || message.data.state === 'paused') &&
-				typeof message.data.progress === 'number'
+				['playing', 'paused'].includes(message.data.state)
 			);
 		case 'progress':
 			return message.data && typeof message.data.progress === 'number';
@@ -69,20 +80,20 @@ const validateMessage = (message: any): message is SyncMessage => {
 	}
 };
 
-class RoomFeed extends Observable<RoomState> {
+class RoomFeed implements ReadOnlyFeed<RoomEvent | null> {
 	public readonly roomId: string;
+	private _feed = new Feed<RoomEvent | null>(null);
+	private state: RoomState | null = null;
 	private ws: WebSocket;
 	private sentMessageIds: Set<string> = new Set();
 	private latestTimestamp: number = 0;
 	private _connectionState = new Observable<ConnectionState>('connecting');
 
-	get connectionState(): ReadOnlyObservable<ConnectionState> {
+	get connectionState(): ReadOnlyFeed<ConnectionState> {
 		return this._connectionState;
 	}
 
 	constructor(roomId: string) {
-		super({ state: 'paused', progress: 0 });
-
 		this.roomId = roomId;
 		this.ws = new WebSocket(`${WS_ENDPOINT}/subscribe?roomId=${roomId}`);
 		this.ws.onopen = () => {
@@ -93,6 +104,18 @@ class RoomFeed extends Observable<RoomState> {
 			this._connectionState.set('closed');
 		};
 		this.ws.onmessage = this.onmessage.bind(this);
+	}
+
+	get latestValue(): RoomEvent | null {
+		return this._feed.latestValue;
+	}
+
+	subscribe(subscriber: Subscriber<RoomEvent | null>, includeLatestValue: boolean): Unsubscribe {
+		return this._feed.subscribe(subscriber, includeLatestValue);
+	}
+
+	unsubscribe(subscriber: Subscriber<RoomEvent | null>): void {
+		this._feed.unsubscribe(subscriber);
 	}
 
 	private generateId(): string {
@@ -131,6 +154,7 @@ class RoomFeed extends Observable<RoomState> {
 			console.warn('Received invalid message:', data);
 			return;
 		}
+
 		if (this.sentMessageIds.has(data.id)) {
 			this.sentMessageIds.delete(data.id);
 			return; // Ignore messages that we sent
@@ -148,23 +172,33 @@ class RoomFeed extends Observable<RoomState> {
 	private handleMessage(message: SyncMessage) {
 		switch (message.type) {
 			case 'play_state':
-				this.set({
-					state: message.data.state,
-					progress: message.data.progress,
+				this._feed.publish({
+					type: message.data.state === 'playing' ? 'play' : 'pause',
 				});
+				this.state = {
+					state: message.data.state,
+					progress: this.state?.progress || 0,
+				};
 				break;
 			case 'progress':
-				this.set({
-					state: this.value.state,
+				this._feed.publish({
+					type: 'seek',
 					progress: message.data.progress,
 				});
+				this.state = {
+					state: this.state?.state || 'paused',
+					progress: message.data.progress,
+				};
 				break;
 			case 'request_sync':
+				if (!this.state) {
+					return;
+				}
 				this.sendMessage({
 					type: 'play_state',
 					data: {
-						state: this.value.state,
-						progress: this.value.progress || 0,
+						state: this.state.state,
+						progress: this.state.progress || 0,
 					},
 				});
 				break;
@@ -180,32 +214,33 @@ class RoomFeed extends Observable<RoomState> {
 
 	close() {
 		this.ws.close();
-		this.disconnect();
+		this._feed.disconnect();
 	}
 
-	setPlayState(state: 'playing' | 'paused', progress: number) {
-		this.set({
-			state,
-			progress,
-		});
+	setPlayState(state: 'playing' | 'paused') {
 		this.sendMessage({
 			type: 'play_state',
-			data: this.value,
+			data: {
+				state,
+			},
 		});
 	}
 
 	setProgress(progress: number) {
-		if (this.value) {
-			this.set({
-				...this.value,
-				progress,
-			});
-			this.sendMessage({
-				type: 'progress',
-				data: { progress },
-			});
-		}
+		this.sendMessage({
+			type: 'progress',
+			data: { progress },
+		});
 	}
 }
 
-export { type ConnectionState, createRoom, RoomFeed, type RoomState };
+export {
+	type ConnectionState,
+	createRoom,
+	type PauseEvent,
+	type PlayEvent,
+	type RoomEvent,
+	RoomFeed,
+	type RoomState,
+	type SeekEvent,
+};
