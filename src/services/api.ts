@@ -142,7 +142,7 @@ class RoomFeed implements ReadOnlyFeed<SyncMessage | null> {
 			return; // Ignore messages that we sent
 		}
 
-		if (data.timestamp > this.latestTimestamp) {
+		if (data.timestamp < this.latestTimestamp) {
 			console.warn('Received out-of-order message:', data);
 			return;
 		}
