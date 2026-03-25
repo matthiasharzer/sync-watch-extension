@@ -61,6 +61,8 @@ class Controller {
 					} else {
 						this.strategy?.handlePause(this.video);
 					}
+					this.state.playingState = event.data.state;
+					this.state.progress = event.data.progress;
 				}
 				if (Math.abs(event.data.progress - this.state.progress) > 0.5) {
 					delay = this.strategy?.handleSeek(this.video, event.data.progress) ?? delay;

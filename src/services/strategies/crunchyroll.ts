@@ -1,5 +1,7 @@
 import type { VideoPlayerSyncStrategy } from './strategy';
 
+const ignore = () => {};
+
 class CrunchyrollVideoPlayerSyncStrategy implements VideoPlayerSyncStrategy {
 	private _forwardButton: HTMLButtonElement | null = null;
 	private _backwardButton: HTMLButtonElement | null = null;
@@ -41,7 +43,7 @@ class CrunchyrollVideoPlayerSyncStrategy implements VideoPlayerSyncStrategy {
 	}
 
 	handlePlay(video: HTMLVideoElement): void {
-		video.play();
+		video.play().catch(ignore);
 	}
 
 	handlePause(video: HTMLVideoElement): void {

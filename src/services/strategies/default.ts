@@ -1,5 +1,7 @@
 import type { VideoPlayerSyncStrategy } from './strategy';
 
+const ignore = () => {};
+
 class DefaultVideoPlayerSyncStrategy implements VideoPlayerSyncStrategy {
 	handleSeek(video: HTMLVideoElement, progress: number): number {
 		video.currentTime = progress;
@@ -7,7 +9,7 @@ class DefaultVideoPlayerSyncStrategy implements VideoPlayerSyncStrategy {
 	}
 
 	handlePlay(video: HTMLVideoElement): void {
-		video.play();
+		video.play().catch(ignore);
 	}
 
 	handlePause(video: HTMLVideoElement): void {

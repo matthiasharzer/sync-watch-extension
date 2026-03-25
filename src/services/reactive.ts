@@ -1,18 +1,18 @@
 type Subscriber<T> = (value: T) => void;
 type Unsubscribe = () => void;
 
-interface ReadonlySubscibable<T> {
+interface ReadonlySubscribable<T> {
 	subscribe(subscriber: Subscriber<T>, includeCurrentValue: boolean): Unsubscribe;
 	unsubscribe(subscriber: Subscriber<T>): void;
 }
 
-type ReadOnlyFeed<T> = ReadonlySubscibable<T>;
+type ReadOnlyFeed<T> = ReadonlySubscribable<T>;
 interface ReadWriteFeed<T> extends ReadOnlyFeed<T> {
 	readonly latestValue: T;
 	publish(value: T): void;
 }
 
-type ReadOnlyObservable<T> = ReadonlySubscibable<T>;
+type ReadOnlyObservable<T> = ReadonlySubscribable<T>;
 interface ReadWriteObservable<T> extends ReadOnlyObservable<T> {
 	readonly value: T;
 	set(value: T): void;
