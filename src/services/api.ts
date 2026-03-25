@@ -1,4 +1,4 @@
-import { Feed, Observable, type ReadOnlyFeed, type Subscriber, type Unsubscribe } from './feed';
+import { Feed, Observable, type ReadOnlyFeed, type Subscriber, type Unsubscribe } from './reactive';
 
 const API_ENDPOINT = 'sync-watch.taptwice.dev/api/v1';
 const WS_ENDPOINT = `wss://${API_ENDPOINT}`;
@@ -14,11 +14,6 @@ interface CreateRoomResponse {
 	room: ResponseRoom;
 }
 
-interface RoomState {
-	state: 'playing' | 'paused';
-	progress: number;
-}
-
 interface Message<TMessage, TData = null> {
 	timestamp: number;
 	type: TMessage;
@@ -26,23 +21,10 @@ interface Message<TMessage, TData = null> {
 	data: TData;
 }
 
-type PlayStateMessage = Message<'play_state', { state: 'playing' | 'paused' }>;
-type ProgressMessage = Message<'progress', { progress: number }>;
+type PlayStateMessage = Message<'play_state', { state: 'playing' | 'paused'; progress: number }>;
 type RequestSyncMessage = Message<'request_sync', null>;
 
-type SyncMessage = PlayStateMessage | ProgressMessage | RequestSyncMessage;
-
-interface PlayEvent {
-	type: 'play';
-}
-interface PauseEvent {
-	type: 'pause';
-}
-interface SeekEvent {
-	type: 'seek';
-	progress: number;
-}
-type RoomEvent = PlayEvent | PauseEvent | SeekEvent;
+type SyncMessage = PlayStateMessage | RequestSyncMessage;
 
 const createRoom = async (): Promise<string> => {
 	try {
@@ -69,7 +51,8 @@ const validateMessage = (message: any): message is SyncMessage => {
 			return (
 				message.data &&
 				typeof message.data.state === 'string' &&
-				['playing', 'paused'].includes(message.data.state)
+				['playing', 'paused'].includes(message.data.state) &&
+				typeof message.data.progress === 'number'
 			);
 		case 'progress':
 			return message.data && typeof message.data.progress === 'number';
@@ -80,10 +63,9 @@ const validateMessage = (message: any): message is SyncMessage => {
 	}
 };
 
-class RoomFeed implements ReadOnlyFeed<RoomEvent | null> {
+class RoomFeed implements ReadOnlyFeed<SyncMessage | null> {
 	public readonly roomId: string;
-	private _feed = new Feed<RoomEvent | null>(null);
-	private state: RoomState | null = null;
+	private _feed = new Feed<SyncMessage | null>(null);
 	private ws: WebSocket;
 	private sentMessageIds: Set<string> = new Set();
 	private latestTimestamp: number = 0;
@@ -103,18 +85,18 @@ class RoomFeed implements ReadOnlyFeed<RoomEvent | null> {
 		this.ws.onclose = () => {
 			this._connectionState.set('closed');
 		};
-		this.ws.onmessage = this.onmessage.bind(this);
+		this.ws.onmessage = this.onMessage.bind(this);
 	}
 
-	get latestValue(): RoomEvent | null {
+	get latestValue(): SyncMessage | null {
 		return this._feed.latestValue;
 	}
 
-	subscribe(subscriber: Subscriber<RoomEvent | null>, includeLatestValue: boolean): Unsubscribe {
+	subscribe(subscriber: Subscriber<SyncMessage | null>, includeLatestValue: boolean): Unsubscribe {
 		return this._feed.subscribe(subscriber, includeLatestValue);
 	}
 
-	unsubscribe(subscriber: Subscriber<RoomEvent | null>): void {
+	unsubscribe(subscriber: Subscriber<SyncMessage | null>): void {
 		this._feed.unsubscribe(subscriber);
 	}
 
@@ -147,7 +129,7 @@ class RoomFeed implements ReadOnlyFeed<RoomEvent | null> {
 		}
 	}
 
-	private onmessage(event: MessageEvent) {
+	private onMessage(event: MessageEvent) {
 		const data = this.parseMessage(event.data);
 		if (!data) return;
 		if (!validateMessage(data)) {
@@ -160,49 +142,13 @@ class RoomFeed implements ReadOnlyFeed<RoomEvent | null> {
 			return; // Ignore messages that we sent
 		}
 
-		if (data.timestamp < this.latestTimestamp) {
+		if (data.timestamp > this.latestTimestamp) {
 			console.warn('Received out-of-order message:', data);
 			return;
 		}
 		this.latestTimestamp = data.timestamp;
 
-		this.handleMessage(data);
-	}
-
-	private handleMessage(message: SyncMessage) {
-		switch (message.type) {
-			case 'play_state':
-				this._feed.publish({
-					type: message.data.state === 'playing' ? 'play' : 'pause',
-				});
-				this.state = {
-					state: message.data.state,
-					progress: this.state?.progress || 0,
-				};
-				break;
-			case 'progress':
-				this._feed.publish({
-					type: 'seek',
-					progress: message.data.progress,
-				});
-				this.state = {
-					state: this.state?.state || 'paused',
-					progress: message.data.progress,
-				};
-				break;
-			case 'request_sync':
-				if (!this.state) {
-					return;
-				}
-				this.sendMessage({
-					type: 'play_state',
-					data: {
-						state: this.state.state,
-						progress: this.state.progress || 0,
-					},
-				});
-				break;
-		}
+		this._feed.publish(data);
 	}
 
 	requestSync() {
@@ -212,35 +158,20 @@ class RoomFeed implements ReadOnlyFeed<RoomEvent | null> {
 		});
 	}
 
-	close() {
-		this.ws.close();
-		this._feed.disconnect();
-	}
-
-	setPlayState(state: 'playing' | 'paused') {
+	sendState(state: 'playing' | 'paused', progress: number) {
 		this.sendMessage({
 			type: 'play_state',
 			data: {
 				state,
+				progress,
 			},
 		});
 	}
 
-	setProgress(progress: number) {
-		this.sendMessage({
-			type: 'progress',
-			data: { progress },
-		});
+	close() {
+		this.ws.close();
+		this._feed.disconnect();
 	}
 }
 
-export {
-	type ConnectionState,
-	createRoom,
-	type PauseEvent,
-	type PlayEvent,
-	type RoomEvent,
-	RoomFeed,
-	type RoomState,
-	type SeekEvent,
-};
+export { type ConnectionState, createRoom, RoomFeed, type SyncMessage };

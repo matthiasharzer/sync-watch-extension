@@ -1,6 +1,6 @@
-import type { SyncStrategy } from './strategy';
+import type { VideoPlayerSyncStrategy } from './strategy';
 
-class CrunchyrollVideoSyncStrategy implements SyncStrategy {
+class CrunchyrollVideoPlayerSyncStrategy implements VideoPlayerSyncStrategy {
 	private _forwardButton: HTMLButtonElement | null = null;
 	private _backwardButton: HTMLButtonElement | null = null;
 
@@ -21,22 +21,22 @@ class CrunchyrollVideoSyncStrategy implements SyncStrategy {
 	handleSeek(video: HTMLVideoElement, progress: number): number {
 		video.currentTime = progress;
 
-		const forwardButton = this.forwardButton;
-		const backwardButton = this.backwardButton;
+		// const forwardButton = this.forwardButton;
+		// const backwardButton = this.backwardButton;
 
-		if (!forwardButton || !backwardButton) {
-			console.warn('Forward or backward button not found, skipping workaround clicks');
-			return 100;
-		}
+		// if (!forwardButton || !backwardButton) {
+		// 	console.warn('Forward or backward button not found, skipping workaround clicks');
+		// 	return 100;
+		// }
 
-		setTimeout(() => {
-			if (forwardButton && backwardButton) {
-				forwardButton.click();
-				setTimeout(() => {
-					backwardButton.click();
-				}, 10);
-			}
-		}, 150);
+		// setTimeout(() => {
+		// 	if (forwardButton && backwardButton) {
+		// 		forwardButton.click();
+		// 		setTimeout(() => {
+		// 			backwardButton.click();
+		// 		}, 10);
+		// 	}
+		// }, 150);
 		return 230;
 	}
 
@@ -49,4 +49,4 @@ class CrunchyrollVideoSyncStrategy implements SyncStrategy {
 	}
 }
 
-export { CrunchyrollVideoSyncStrategy };
+export { CrunchyrollVideoPlayerSyncStrategy };

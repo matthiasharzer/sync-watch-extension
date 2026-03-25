@@ -1,25 +1,35 @@
-import type { ConnectionState, RoomEvent, RoomFeed } from './api';
-import { Observable, type ReadOnlyObservable } from './feed';
-import type { SyncStrategy } from './strategies/strategy';
+import type { ConnectionState, RoomFeed, SyncMessage } from './api';
+import { Observable } from './reactive';
+import type { VideoPlayerSyncStrategy } from './strategies/strategy';
 
 type ControllerState = 'idle' | 'connected';
 
+interface RoomState {
+	playingState: 'playing' | 'paused';
+	progress: number;
+}
+
 class Controller {
 	public feed: RoomFeed | null = null;
-	private _video: HTMLVideoElement | null = null;
-	private ignoreUntil = 0;
-	private _state = new Observable<ControllerState>('idle');
-	private strategy: SyncStrategy | null = null;
+	private state: RoomState = {
+		playingState: 'paused',
+		progress: 0,
+	};
+	private _videoElement: HTMLVideoElement | null = null;
 
-	get state(): ReadOnlyObservable<ControllerState> {
-		return this._state;
+	private ignoreUntil = 0;
+	private strategy: VideoPlayerSyncStrategy | null = null;
+	private _connectionState = new Observable<ControllerState>('idle');
+
+	get connectionState() {
+		return this._connectionState;
 	}
 
 	private get video() {
-		if (!this._video) {
+		if (!this._videoElement) {
 			throw new Error('Video element not set');
 		}
-		return this._video;
+		return this._videoElement;
 	}
 
 	#onPlay = this.onPlay.bind(this);
@@ -37,24 +47,40 @@ class Controller {
 		return Date.now() < this.ignoreUntil;
 	}
 
-	private handleFeed(event: RoomEvent | null) {
+	private handleFeed(event: SyncMessage | null) {
 		if (!event) {
 			return;
 		}
 		let delay = 150;
 
 		switch (event.type) {
-			case 'pause':
-				this.strategy?.handlePause(this.video);
+			case 'play_state':
+				if (event.data.state !== this.state.playingState) {
+					if (event.data.state === 'playing') {
+						this.strategy?.handlePlay(this.video);
+					} else {
+						this.strategy?.handlePause(this.video);
+					}
+				}
+				if (Math.abs(event.data.progress - this.state.progress) > 0.5) {
+					delay = this.strategy?.handleSeek(this.video, event.data.progress) ?? delay;
+				}
 				break;
-			case 'play':
-				this.strategy?.handlePlay(this.video);
-				break;
-			case 'seek':
-				delay = this.strategy?.handleSeek(this.video, event.progress) ?? 150;
+			case 'request_sync':
+				this.feed?.sendState(this.state.playingState, this.state.progress);
 				break;
 		}
 		this.ignoreNext(delay);
+	}
+
+	private setPlayingState(playingState: 'playing' | 'paused') {
+		this.state.playingState = playingState;
+		this.feed?.sendState(playingState, this.state.progress);
+	}
+
+	private setProgress(progress: number) {
+		this.state.progress = progress;
+		this.feed?.sendState(this.state.playingState, progress);
 	}
 
 	private onPlay() {
@@ -64,7 +90,12 @@ class Controller {
 		if (!this.feed) {
 			return;
 		}
-		this.feed.setPlayState('playing');
+
+		// const currentDelta = Math.abs(this.video.currentTime - this.state.progress);
+		// if (currentDelta > 0.5) {
+		// 	this.setProgress(this.state.progress);
+		// }
+		this.setPlayingState('playing');
 	}
 
 	private onPause() {
@@ -74,7 +105,7 @@ class Controller {
 		if (!this.feed) {
 			return;
 		}
-		this.feed.setPlayState('paused');
+		this.setPlayingState('paused');
 	}
 
 	private onSeek() {
@@ -88,13 +119,15 @@ class Controller {
 			return;
 		}
 		this.#lastSeekTime = this.video.currentTime;
-		this.feed.setProgress(this.video.currentTime);
+		this.setProgress(this.video.currentTime);
 	}
 
 	private handleFeedConnectionStateChange(state: ConnectionState) {
 		if (state === 'closed') {
 			this.feed = null;
-			this._state.set('idle');
+			this._connectionState.set('idle');
+		} else if (state === 'open') {
+			this._connectionState.set('connected');
 		}
 	}
 
@@ -107,33 +140,34 @@ class Controller {
 			this.feed.close();
 		}
 		this.feed = feed;
+
 		this.feed.subscribe(this.#handleFeed, false);
 		this.feed.connectionState.subscribe(this.#handleFeedConnectionStateChange, true);
 	}
 
 	setVideo(video: HTMLVideoElement) {
-		if (this._video) {
-			this._video.removeEventListener('play', this.#onPlay);
-			this._video.removeEventListener('pause', this.#onPause);
-			this._video.removeEventListener('seeked', this.#onSeek);
+		if (this._videoElement) {
+			this._videoElement.removeEventListener('play', this.#onPlay);
+			this._videoElement.removeEventListener('pause', this.#onPause);
+			this._videoElement.removeEventListener('seeked', this.#onSeek);
 		}
 
-		this._video = video;
+		this._videoElement = video;
 
 		this.video.addEventListener('play', this.#onPlay);
 		this.video.addEventListener('pause', this.#onPause);
 		this.video.addEventListener('seeked', this.#onSeek);
 	}
 
-	setStrategy(strategy: SyncStrategy) {
+	setStrategy(strategy: VideoPlayerSyncStrategy) {
 		this.strategy = strategy;
 	}
 
 	destroy() {
-		if (this._video) {
-			this._video.removeEventListener('play', this.#onPlay);
-			this._video.removeEventListener('pause', this.#onPause);
-			this._video.removeEventListener('seeked', this.#onSeek);
+		if (this._videoElement) {
+			this._videoElement.removeEventListener('play', this.#onPlay);
+			this._videoElement.removeEventListener('pause', this.#onPause);
+			this._videoElement.removeEventListener('seeked', this.#onSeek);
 		}
 		if (this.feed) {
 			this.feed.close();

@@ -1,16 +1,16 @@
 import { Message } from './messages';
 import { createRoom, RoomFeed } from './services/api';
 import { Controller } from './services/controller';
-import { CrunchyrollVideoSyncStrategy } from './services/strategies/crunchyroll';
-import { DefaultVideoPlayerStrategy } from './services/strategies/default';
-import type { SyncStrategy } from './services/strategies/strategy';
+import { CrunchyrollVideoPlayerSyncStrategy } from './services/strategies/crunchyroll';
+import { DefaultVideoPlayerSyncStrategy } from './services/strategies/default';
+import type { VideoPlayerSyncStrategy } from './services/strategies/strategy';
 import type { AnyMessage } from './types';
 
 const $ = document.querySelector.bind(document);
 let videoElement = $('video') as HTMLVideoElement | null;
 
-const customStrategies: Record<string, SyncStrategy> = {
-	'\\w*\\.?crunchyroll\\.com': new CrunchyrollVideoSyncStrategy(),
+const customStrategies: Record<string, VideoPlayerSyncStrategy> = {
+	'(?:^|\\.)crunchyroll\\.com$': new CrunchyrollVideoPlayerSyncStrategy(),
 };
 
 const controller: Controller = new Controller();
@@ -107,7 +107,7 @@ const findAndSetVideoElement = () => {
 	controller.setVideo(videoElement);
 };
 
-const getStrategyForCurrentSite = (): SyncStrategy => {
+const getStrategyForCurrentSite = (): VideoPlayerSyncStrategy => {
 	const hostname = window.location.hostname;
 	for (const pattern in customStrategies) {
 		const regex = new RegExp(pattern);
@@ -116,7 +116,7 @@ const getStrategyForCurrentSite = (): SyncStrategy => {
 		}
 	}
 
-	return new DefaultVideoPlayerStrategy();
+	return new DefaultVideoPlayerSyncStrategy();
 };
 
 const init = () => {
@@ -139,7 +139,7 @@ const init = () => {
 		return true; // Indicate that we will send a response asynchronously
 	});
 
-	controller.state.subscribe(state => {
+	controller.connectionState.subscribe(state => {
 		if (state === 'idle') {
 			sendMessage({ action: Message.ClearRoom });
 		}

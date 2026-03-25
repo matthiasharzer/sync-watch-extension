@@ -1,6 +1,6 @@
-import type { SyncStrategy } from './strategy';
+import type { VideoPlayerSyncStrategy } from './strategy';
 
-class DefaultVideoPlayerStrategy implements SyncStrategy {
+class DefaultVideoPlayerSyncStrategy implements VideoPlayerSyncStrategy {
 	handleSeek(video: HTMLVideoElement, progress: number): number {
 		video.currentTime = progress;
 		return 150; // Return a delay to allow the video to seek before other actions
@@ -15,4 +15,4 @@ class DefaultVideoPlayerStrategy implements SyncStrategy {
 	}
 }
 
-export { DefaultVideoPlayerStrategy };
+export { DefaultVideoPlayerSyncStrategy };
