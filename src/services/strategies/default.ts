@@ -1,11 +1,15 @@
+import type { PlayerAction } from '../../types';
 import type { VideoPlayerSyncStrategy } from './strategy';
 
 const ignore = () => {};
 
 class DefaultVideoPlayerSyncStrategy implements VideoPlayerSyncStrategy {
-	handleSeek(video: HTMLVideoElement, progress: number): number {
+	ignoredSeekActions(): PlayerAction[] {
+		return ['seek'];
+	}
+
+	handleSeek(video: HTMLVideoElement, progress: number) {
 		video.currentTime = progress;
-		return 150; // Return a delay to allow the video to seek before other actions
 	}
 
 	handlePlay(video: HTMLVideoElement): void {

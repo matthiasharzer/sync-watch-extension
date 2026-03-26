@@ -1,5 +1,8 @@
+import type { PlayerAction } from '../../types';
+
 interface VideoPlayerSyncStrategy {
-	handleSeek(video: HTMLVideoElement, progress: number): number;
+	ignoredSeekActions(): PlayerAction[];
+	handleSeek(video: HTMLVideoElement, progress: number): Promise<void> | void;
 	handlePlay(video: HTMLVideoElement): void;
 	handlePause(video: HTMLVideoElement): void;
 }

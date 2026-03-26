@@ -1,7 +1,7 @@
 import { Message } from './messages';
 import { createRoom, RoomFeed } from './services/api';
 import { Controller } from './services/controller';
-import { CrunchyrollVideoPlayerSyncStrategy } from './services/strategies/crunchyroll';
+import { BitmovinVideoPlayerSyncStrategy } from './services/strategies/bitmovin';
 import { DefaultVideoPlayerSyncStrategy } from './services/strategies/default';
 import type { VideoPlayerSyncStrategy } from './services/strategies/strategy';
 import type { AnyMessage } from './types';
@@ -10,7 +10,7 @@ const $ = document.querySelector.bind(document);
 let videoElement = $('video') as HTMLVideoElement | null;
 
 const customStrategies: Record<string, VideoPlayerSyncStrategy> = {
-	'(?:^|\\.)crunchyroll\\.com$': new CrunchyrollVideoPlayerSyncStrategy(),
+	'(?:^|\\.)crunchyroll\\.com$': new BitmovinVideoPlayerSyncStrategy(),
 };
 
 const controller: Controller = new Controller();

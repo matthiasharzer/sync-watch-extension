@@ -17,7 +17,11 @@ class Controller {
 	};
 	private _videoElement: HTMLVideoElement | null = null;
 
-	private ignoreUntil = 0;
+	private ignoreUntilMax = {
+		play: 0,
+		pause: 0,
+		seek: 0,
+	};
 	private strategy: VideoPlayerSyncStrategy | null = null;
 	private _connectionState = new Observable<ControllerState>('idle');
 
@@ -37,42 +41,54 @@ class Controller {
 	#onSeek = this.onSeek.bind(this);
 	#handleFeed = this.handleFeed.bind(this);
 	#handleFeedConnectionStateChange = this.handleFeedConnectionStateChange.bind(this);
-	#lastSeekTime = 0;
 
-	private ignoreNext(delay: number) {
-		this.ignoreUntil = Date.now() + delay;
+	private ignoreNext(k: keyof typeof this.ignoreUntilMax, delay: number = 2000) {
+		this.ignoreUntilMax[k] = Date.now() + delay;
 	}
 
-	private isIgnored() {
-		return Date.now() < this.ignoreUntil;
+	private isIgnored(k: keyof typeof this.ignoreUntilMax) {
+		if (Date.now() < this.ignoreUntilMax[k]) {
+			this.ignoreUntilMax[k] = 0;
+			return true;
+		}
+		return false;
 	}
 
-	private handleFeed(event: SyncMessage | null) {
+	private async handleFeed(event: SyncMessage | null) {
 		if (!event) {
 			return;
 		}
-		let delay = 150;
+
+		console.log('Received feed event:', event);
 
 		switch (event.type) {
-			case 'play_state':
+			case 'play_state': {
+				const progressDelta = Math.abs(event.data.progress - (this.video.currentTime || 0));
+				console.log('Progress delta:', progressDelta);
+				if (progressDelta > 0.5) {
+					const seeks = this.strategy?.ignoredSeekActions() || [];
+					for (const seekAction of seeks) {
+						this.ignoreNext(seekAction);
+					}
+					await this.strategy?.handleSeek(this.video, event.data.progress);
+				}
 				if (event.data.state !== this.state.playingState) {
 					if (event.data.state === 'playing') {
+						this.ignoreNext('play');
 						this.strategy?.handlePlay(this.video);
 					} else {
+						this.ignoreNext('pause');
 						this.strategy?.handlePause(this.video);
 					}
 					this.state.playingState = event.data.state;
 					this.state.progress = event.data.progress;
 				}
-				if (Math.abs(event.data.progress - this.state.progress) > 0.5) {
-					delay = this.strategy?.handleSeek(this.video, event.data.progress) ?? delay;
-				}
 				break;
+			}
 			case 'request_sync':
 				this.feed?.sendState(this.state.playingState, this.state.progress);
 				break;
 		}
-		this.ignoreNext(delay);
 	}
 
 	private setPlayingState(playingState: 'playing' | 'paused') {
@@ -86,22 +102,20 @@ class Controller {
 	}
 
 	private onPlay() {
-		if (this.isIgnored()) {
+		if (this.isIgnored('play')) {
 			return;
 		}
 		if (!this.feed) {
 			return;
 		}
 
-		// const currentDelta = Math.abs(this.video.currentTime - this.state.progress);
-		// if (currentDelta > 0.5) {
-		// 	this.setProgress(this.state.progress);
-		// }
+		console.log('Local play at:', this.video.currentTime);
+
 		this.setPlayingState('playing');
 	}
 
 	private onPause() {
-		if (this.isIgnored()) {
+		if (this.isIgnored('pause')) {
 			return;
 		}
 		if (!this.feed) {
@@ -111,16 +125,17 @@ class Controller {
 	}
 
 	private onSeek() {
-		if (this.isIgnored()) {
+		if (this.isIgnored('seek')) {
 			return;
 		}
 		if (!this.feed) {
 			return;
 		}
-		if (Math.abs(this.video.currentTime - this.#lastSeekTime) < 0.5) {
+		if (Math.abs(this.video.currentTime - this.state.progress) < 0.5) {
+			console.log('IGNORED');
 			return;
 		}
-		this.#lastSeekTime = this.video.currentTime;
+		console.log('ACCEPTED');
 		this.setProgress(this.video.currentTime);
 	}
 
