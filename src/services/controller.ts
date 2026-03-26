@@ -1,3 +1,4 @@
+import { log } from '../log';
 import type { ConnectionState, RoomFeed, SyncMessage } from './api';
 import { Observable } from './reactive';
 import type { VideoPlayerSyncStrategy } from './strategies/strategy';
@@ -59,12 +60,12 @@ class Controller {
 			return;
 		}
 
-		console.log('Received feed event:', event);
+		log('Received feed event:', event);
 
 		switch (event.type) {
 			case 'play_state': {
 				const progressDelta = Math.abs(event.data.progress - (this.video.currentTime || 0));
-				console.log('Progress delta:', progressDelta);
+				log('Progress delta:', progressDelta);
 				if (progressDelta > 0.5) {
 					const seeks = this.strategy?.ignoredSeekActions() || [];
 					for (const seekAction of seeks) {
@@ -110,7 +111,7 @@ class Controller {
 			return;
 		}
 
-		console.log('Local play at:', this.video.currentTime);
+		log('Local play at:', this.video.currentTime);
 
 		this.setPlayingState('playing');
 	}
@@ -133,10 +134,10 @@ class Controller {
 			return;
 		}
 		if (Math.abs(this.video.currentTime - this.state.progress) < 0.5) {
-			console.log('IGNORED');
+			log('IGNORED');
 			return;
 		}
-		console.log('ACCEPTED');
+		log('ACCEPTED');
 		this.setProgress(this.video.currentTime);
 	}
 

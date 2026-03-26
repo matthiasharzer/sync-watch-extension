@@ -1,3 +1,4 @@
+import { log } from '../../log';
 import { Port } from '../../ports';
 import type { PlayerAction } from '../../types';
 import type { VideoPlayerSyncStrategy } from './strategy';
@@ -25,7 +26,7 @@ class BitmovinVideoPlayerSyncStrategy implements VideoPlayerSyncStrategy {
 			backgroundPort.onMessage.addListener(message => {
 				if (message.action === Port.BackgroundToContent.Messages.SeekBitmovinResponse) {
 					clearTimeout(timeoutId);
-					console.log('Received seekBitmovinResponse:', message);
+					log('Received seekBitmovinResponse:', message);
 					if (!message.success) {
 						// Fallback to default seeking if Bitmovin seek fails
 						video.currentTime = progress;
