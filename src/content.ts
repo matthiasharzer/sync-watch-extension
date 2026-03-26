@@ -20,6 +20,7 @@ const handleCreateRoom = async () => {
 		const roomId = await createRoom();
 		const feed = new RoomFeed(roomId);
 		controller.setFeed(feed);
+		controller.initState();
 
 		return { success: true, roomId };
 	} catch (error) {

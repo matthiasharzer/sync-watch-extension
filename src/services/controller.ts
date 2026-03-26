@@ -86,14 +86,15 @@ class Controller {
 				break;
 			}
 			case 'request_sync':
-				this.feed?.sendState(this.state.playingState, this.state.progress);
+				this.feed?.sendState(this.state.playingState, this.video.currentTime);
 				break;
 		}
 	}
 
 	private setPlayingState(playingState: 'playing' | 'paused') {
 		this.state.playingState = playingState;
-		this.feed?.sendState(playingState, this.state.progress);
+		this.state.progress = this.video.currentTime;
+		this.feed?.sendState(playingState, this.video.currentTime);
 	}
 
 	private setProgress(progress: number) {
@@ -178,6 +179,13 @@ class Controller {
 
 	setStrategy(strategy: VideoPlayerSyncStrategy) {
 		this.strategy = strategy;
+	}
+
+	initState() {
+		this.state = {
+			playingState: this.video.paused ? 'paused' : 'playing',
+			progress: this.video.currentTime,
+		};
 	}
 
 	destroy() {
