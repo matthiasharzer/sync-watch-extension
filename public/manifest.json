@@ -14,8 +14,8 @@
 		}
 	],
 	"background": {
-    "service_worker": "dist/background.js"
-  },
+		"service_worker": "dist/background.js"
+	},
 	"permissions": ["activeTab", "scripting"],
 	"host_permissions": [
 		"*://www.w3schools.com/*",
