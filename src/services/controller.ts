@@ -1,6 +1,6 @@
 import { log } from '../log';
 import type { ConnectionState, RoomFeed, SyncMessage } from './api';
-import { Observable } from './reactive';
+import { Observable, type ReadOnlyObservable } from './reactive';
 import type { VideoPlayerSyncStrategy } from './strategies/strategy';
 
 type ControllerState = 'idle' | 'connected';
@@ -26,7 +26,7 @@ class Controller {
 	private strategy: VideoPlayerSyncStrategy | null = null;
 	private _connectionState = new Observable<ControllerState>('idle');
 
-	get connectionState() {
+	get connectionState(): ReadOnlyObservable<ControllerState> {
 		return this._connectionState;
 	}
 
@@ -82,12 +82,14 @@ class Controller {
 						this.strategy?.handlePause(this.video);
 					}
 					this.state.playingState = event.data.state;
-					this.state.progress = event.data.progress;
 				}
+				this.state.progress = event.data.progress;
 				break;
 			}
 			case 'request_sync':
-				this.feed?.sendState(this.state.playingState, this.video.currentTime);
+				this.state.progress = this.video.currentTime;
+				this.state.playingState = this.video.paused ? 'paused' : 'playing';
+				this.feed?.sendState(this.state.playingState, this.state.progress);
 				break;
 		}
 	}

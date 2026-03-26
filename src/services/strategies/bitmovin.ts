@@ -17,17 +17,26 @@ class BitmovinVideoPlayerSyncStrategy implements VideoPlayerSyncStrategy {
 	}
 
 	async handleSeek(video: HTMLVideoElement, progress: number): Promise<void> {
-		return new Promise(resolve => {
+		return new Promise(resolvePromise => {
 			this.backgroundPort.postMessage({
 				action: Port.BackgroundToContent.Messages.SeekBitmovin,
 				progress,
 			});
+
+			const resolve = () => {
+				video.currentTime = progress;
+				this.backgroundPort.onMessage.removeListener(handleResponse);
+				clearTimeout(timeoutId);
+				resolvePromise();
+			};
+
 			const timeoutId = setTimeout(() => {
 				log.warn('Seek Bitmovin response timeout, falling back to default seek');
 				resolve();
 			}, 2000); // 2 second timeout for response
 
-			this.backgroundPort.onMessage.addListener(message => {
+			// biome-ignore lint/suspicious/noExplicitAny: unavoidable due to Chrome extension messaging
+			const handleResponse = (message: any) => {
 				if (message.action === Port.BackgroundToContent.Messages.SeekBitmovinResponse) {
 					clearTimeout(timeoutId);
 					log.info('Received seekBitmovinResponse:', message);
@@ -37,7 +46,9 @@ class BitmovinVideoPlayerSyncStrategy implements VideoPlayerSyncStrategy {
 					}
 					resolve();
 				}
-			});
+			};
+
+			this.backgroundPort.onMessage.addListener(handleResponse);
 		});
 	}
 
