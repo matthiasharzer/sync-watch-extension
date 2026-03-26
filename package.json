@@ -3,6 +3,7 @@
 	"version": "1.0.0",
 	"scripts": {
 		"build": "esbuild --bundle --outdir=public/dist --keep-names --define:__DEBUG__=false src/*.ts",
+		"build:dev": "esbuild --bundle --outdir=public/dist --keep-names --sourcemap --define:__DEBUG__=true src/*.ts",
 		"watch": "esbuild --bundle --outdir=public/dist --keep-names --sourcemap --watch --define:__DEBUG__=true src/*.ts ",
 		"format": "biome check --write",
 		"typecheck": "tsc --noEmit",
