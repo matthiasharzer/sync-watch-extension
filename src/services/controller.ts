@@ -60,12 +60,12 @@ class Controller {
 			return;
 		}
 
-		log('Received feed event:', event);
+		log.info('Received feed event:', event);
 
 		switch (event.type) {
 			case 'play_state': {
 				const progressDelta = Math.abs(event.data.progress - (this.video.currentTime || 0));
-				log('Progress delta:', progressDelta);
+				log.info('Progress delta:', progressDelta);
 				if (progressDelta > 0.5) {
 					const seeks = this.strategy?.ignoredSeekActions() || [];
 					for (const seekAction of seeks) {
@@ -111,7 +111,7 @@ class Controller {
 			return;
 		}
 
-		log('Local play at:', this.video.currentTime);
+		log.info('Local play at:', this.video.currentTime);
 
 		this.setPlayingState('playing');
 	}
@@ -133,11 +133,12 @@ class Controller {
 		if (!this.feed) {
 			return;
 		}
+		log.info('Local seek to:', this.video.currentTime);
 		if (Math.abs(this.video.currentTime - this.state.progress) < 0.5) {
-			log('IGNORED');
+			log.info('IGNORED');
 			return;
 		}
-		log('ACCEPTED');
+		log.info('ACCEPTED');
 		this.setProgress(this.video.currentTime);
 	}
 

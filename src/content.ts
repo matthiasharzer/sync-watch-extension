@@ -1,3 +1,4 @@
+import { log } from './log';
 import { Message } from './messages';
 import { createRoom, RoomFeed } from './services/api';
 import { Controller } from './services/controller';
@@ -25,10 +26,10 @@ const handleCreateRoom = async () => {
 		return { success: true, roomId };
 	} catch (error) {
 		if (error instanceof Error) {
-			console.error('Error creating room:', error);
+			log.error('Error creating room:', error);
 			return { success: false, error: error.message };
 		}
-		console.error('Unknown error creating room:', error);
+		log.error('Unknown error creating room:', error);
 		return { success: false, error: 'Unknown error' };
 	}
 };
@@ -40,10 +41,10 @@ const handleJoinRoom = async (roomId: string) => {
 		return { success: true };
 	} catch (error) {
 		if (error instanceof Error) {
-			console.error('Error joining room:', error);
+			log.error('Error joining room:', error);
 			return { success: false, error: error.message };
 		}
-		console.error('Unknown error joining room:', error);
+		log.error('Unknown error joining room:', error);
 		return { success: false, error: 'Unknown error' };
 	}
 };
@@ -65,7 +66,7 @@ const handleGetCurrentRoom = async () => {
 
 const handleMessage = async (message: AnyMessage) => {
 	if (typeof message !== 'object' || message === null || typeof message.action !== 'string') {
-		console.warn('Received invalid message:', message);
+		log.warn('Received invalid message:', message);
 		return;
 	}
 
@@ -85,7 +86,7 @@ const handleMessage = async (message: AnyMessage) => {
 		case Message.HasVideoElement:
 			return { hasVideo: !!videoElement };
 		default:
-			console.warn('Unknown action:', message.action);
+			log.warn('Unknown action:', message.action);
 			return { success: false, error: 'Unknown action' };
 	}
 };
@@ -131,7 +132,7 @@ const init = () => {
 				sendResponse(response);
 			})
 			.catch(error => {
-				console.error('Error handling message:', error);
+				log.error('Error handling message:', error);
 				sendResponse({
 					success: false,
 					error: error instanceof Error ? error.message : 'Unknown error',
@@ -160,7 +161,7 @@ const init = () => {
 			roomId: initialRoomId,
 		});
 	} catch (error) {
-		console.error('Error joining room from URL:', error);
+		log.error('Error joining room from URL:', error);
 	}
 };
 

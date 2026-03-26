@@ -1,3 +1,4 @@
+import { log } from '../log';
 import { Feed, Observable, type ReadOnlyFeed, type Subscriber, type Unsubscribe } from './reactive';
 
 const API_ENDPOINT = 'sync-watch.taptwice.dev/api/v1';
@@ -34,7 +35,7 @@ const createRoom = async (): Promise<string> => {
 		const data = (await response.json()) as CreateRoomResponse;
 		return data.room.id;
 	} catch (error) {
-		console.error('Error creating room:', error);
+		log.error('Error creating room:', error);
 	}
 	return '';
 };
@@ -106,7 +107,7 @@ class RoomFeed implements ReadOnlyFeed<SyncMessage | null> {
 
 	private sendMessage(message: Omit<SyncMessage, 'id' | 'timestamp'>) {
 		if (this.ws.readyState !== WebSocket.OPEN) {
-			console.warn('WebSocket is not open. Cannot send message:', message);
+			log.warn('WebSocket is not open. Cannot send message:', message);
 			return;
 		}
 		const messageId = this.generateId();
@@ -120,11 +121,11 @@ class RoomFeed implements ReadOnlyFeed<SyncMessage | null> {
 			if (validateMessage(message)) {
 				return message;
 			} else {
-				console.warn('Received invalid message:', message);
+				log.warn('Received invalid message:', message);
 				return null;
 			}
 		} catch (error) {
-			console.error('Error parsing message:', error);
+			log.error('Error parsing message:', error);
 			return null;
 		}
 	}
@@ -133,7 +134,7 @@ class RoomFeed implements ReadOnlyFeed<SyncMessage | null> {
 		const data = this.parseMessage(event.data);
 		if (!data) return;
 		if (!validateMessage(data)) {
-			console.warn('Received invalid message:', data);
+			log.warn('Received invalid message:', data);
 			return;
 		}
 
@@ -143,7 +144,7 @@ class RoomFeed implements ReadOnlyFeed<SyncMessage | null> {
 		}
 
 		if (data.timestamp < this.latestTimestamp) {
-			console.warn('Received out-of-order message:', data);
+			log.warn('Received out-of-order message:', data);
 			return;
 		}
 		this.latestTimestamp = data.timestamp;

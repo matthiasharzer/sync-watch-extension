@@ -1,3 +1,4 @@
+import { log } from './log';
 import { Port } from './ports';
 import type { AnyMessage } from './types';
 
@@ -22,7 +23,7 @@ const handleBitmovinSeek = async (tabId: number, progress: number) => {
 						return true;
 					}
 				} catch (error) {
-					console.error('Error seeking Bitmovin player:', error);
+					log.error('Error seeking Bitmovin player:', error);
 				}
 				return false;
 			},
@@ -31,19 +32,19 @@ const handleBitmovinSeek = async (tabId: number, progress: number) => {
 		const success = injectionResults[0].result;
 		return success;
 	} catch (err) {
-		console.error('Scripting API Error:', err);
+		log.error('Scripting API Error:', err);
 		return false;
 	}
 };
 
 const handleSeekBitmovin = (request: AnyMessage, port: chrome.runtime.Port) => {
 	if (typeof request.progress !== 'number') {
-		console.warn('Invalid seekBitmovin message:', request);
+		log.warn('Invalid seekBitmovin message:', request);
 		return;
 	}
 	const tabId = port.sender?.tab?.id;
 	if (typeof tabId !== 'number') {
-		console.warn('Could not determine sender tab ID for seekBitmovin message');
+		log.warn('Could not determine sender tab ID for seekBitmovin message');
 		return;
 	}
 

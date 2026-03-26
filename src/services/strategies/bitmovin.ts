@@ -5,28 +5,32 @@ import type { VideoPlayerSyncStrategy } from './strategy';
 
 const ignore = () => {};
 
-const backgroundPort = chrome.runtime.connect({ name: Port.BackgroundToContent.Name });
-
 class BitmovinVideoPlayerSyncStrategy implements VideoPlayerSyncStrategy {
+	private backgroundPort: chrome.runtime.Port;
+
+	constructor() {
+		this.backgroundPort = chrome.runtime.connect({ name: Port.BackgroundToContent.Name });
+	}
+
 	ignoredSeekActions(): PlayerAction[] {
 		return ['seek', 'pause'];
 	}
 
 	async handleSeek(video: HTMLVideoElement, progress: number): Promise<void> {
 		return new Promise(resolve => {
-			backgroundPort.postMessage({
+			this.backgroundPort.postMessage({
 				action: Port.BackgroundToContent.Messages.SeekBitmovin,
 				progress,
 			});
 			const timeoutId = setTimeout(() => {
-				console.warn('Seek Bitmovin response timeout, falling back to default seek');
+				log.warn('Seek Bitmovin response timeout, falling back to default seek');
 				resolve();
 			}, 2000); // 2 second timeout for response
 
-			backgroundPort.onMessage.addListener(message => {
+			this.backgroundPort.onMessage.addListener(message => {
 				if (message.action === Port.BackgroundToContent.Messages.SeekBitmovinResponse) {
 					clearTimeout(timeoutId);
-					log('Received seekBitmovinResponse:', message);
+					log.info('Received seekBitmovinResponse:', message);
 					if (!message.success) {
 						// Fallback to default seeking if Bitmovin seek fails
 						video.currentTime = progress;

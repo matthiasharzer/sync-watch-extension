@@ -1,3 +1,4 @@
+import { log } from './log';
 import { Message } from './messages';
 import type { AnyMessage } from './types';
 
@@ -63,7 +64,7 @@ const handleSetRoomId = (roomId: string) => {
 
 const handleMessage = (message: AnyMessage) => {
 	if (typeof message !== 'object' || message === null || typeof message.action !== 'string') {
-		console.warn('Received invalid message:', message);
+		log.warn('Received invalid message:', message);
 		return;
 	}
 
@@ -75,7 +76,7 @@ const handleMessage = (message: AnyMessage) => {
 			if (typeof message.roomId === 'string') {
 				handleSetRoomId(message.roomId);
 			} else {
-				console.warn('Received invalid roomId:', message.roomId);
+				log.warn('Received invalid roomId:', message.roomId);
 			}
 			break;
 	}
@@ -84,7 +85,7 @@ const handleMessage = (message: AnyMessage) => {
 const sendMessage = <M, R = AnyMessage>(message: M, callback?: (response: R) => void) => {
 	getActiveTab().then(tab => {
 		if (!tab?.id) {
-			console.error('No active tab found');
+			log.error('No active tab found');
 			return;
 		}
 		if (callback) {
