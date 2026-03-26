@@ -13,7 +13,10 @@
 			"js": ["dist/content.js"]
 		}
 	],
-	"permissions": ["activeTab"],
+	"background": {
+		"service_worker": "dist/background.js"
+	},
+	"permissions": ["activeTab", "scripting"],
 	"host_permissions": [
 		"*://www.w3schools.com/*",
 		"*://developer.chrome.com/*",

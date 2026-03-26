@@ -1,10 +1,19 @@
+import { log } from './log';
 import { Message } from './messages';
 import { createRoom, RoomFeed } from './services/api';
 import { Controller } from './services/controller';
+import { BitmovinVideoPlayerSyncStrategy } from './services/strategies/bitmovin';
+import { DefaultVideoPlayerSyncStrategy } from './services/strategies/default';
+import type { VideoPlayerSyncStrategy } from './services/strategies/strategy';
 import type { AnyMessage } from './types';
 
 const $ = document.querySelector.bind(document);
 let videoElement = $('video') as HTMLVideoElement | null;
+
+const customStrategies: Record<string, VideoPlayerSyncStrategy> = {
+	'(?:^|\\.)crunchyroll\\.com$': new BitmovinVideoPlayerSyncStrategy(),
+};
+
 const controller: Controller = new Controller();
 
 const handleCreateRoom = async () => {
@@ -12,14 +21,15 @@ const handleCreateRoom = async () => {
 		const roomId = await createRoom();
 		const feed = new RoomFeed(roomId);
 		controller.setFeed(feed);
+		controller.initState();
 
 		return { success: true, roomId };
 	} catch (error) {
 		if (error instanceof Error) {
-			console.error('Error creating room:', error);
+			log.error('Error creating room:', error);
 			return { success: false, error: error.message };
 		}
-		console.error('Unknown error creating room:', error);
+		log.error('Unknown error creating room:', error);
 		return { success: false, error: 'Unknown error' };
 	}
 };
@@ -31,10 +41,10 @@ const handleJoinRoom = async (roomId: string) => {
 		return { success: true };
 	} catch (error) {
 		if (error instanceof Error) {
-			console.error('Error joining room:', error);
+			log.error('Error joining room:', error);
 			return { success: false, error: error.message };
 		}
-		console.error('Unknown error joining room:', error);
+		log.error('Unknown error joining room:', error);
 		return { success: false, error: 'Unknown error' };
 	}
 };
@@ -56,7 +66,7 @@ const handleGetCurrentRoom = async () => {
 
 const handleMessage = async (message: AnyMessage) => {
 	if (typeof message !== 'object' || message === null || typeof message.action !== 'string') {
-		console.warn('Received invalid message:', message);
+		log.warn('Received invalid message:', message);
 		return;
 	}
 
@@ -76,7 +86,7 @@ const handleMessage = async (message: AnyMessage) => {
 		case Message.HasVideoElement:
 			return { hasVideo: !!videoElement };
 		default:
-			console.warn('Unknown action:', message.action);
+			log.warn('Unknown action:', message.action);
 			return { success: false, error: 'Unknown action' };
 	}
 };
@@ -99,8 +109,22 @@ const findAndSetVideoElement = () => {
 	controller.setVideo(videoElement);
 };
 
+const getStrategyForCurrentSite = (): VideoPlayerSyncStrategy => {
+	const hostname = window.location.hostname;
+	for (const pattern in customStrategies) {
+		const regex = new RegExp(pattern);
+		if (regex.test(hostname)) {
+			return customStrategies[pattern];
+		}
+	}
+
+	return new DefaultVideoPlayerSyncStrategy();
+};
+
 const init = () => {
 	findAndSetVideoElement();
+	const strategy = getStrategyForCurrentSite();
+	controller.setStrategy(strategy);
 
 	chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
 		handleMessage(message)
@@ -108,7 +132,7 @@ const init = () => {
 				sendResponse(response);
 			})
 			.catch(error => {
-				console.error('Error handling message:', error);
+				log.error('Error handling message:', error);
 				sendResponse({
 					success: false,
 					error: error instanceof Error ? error.message : 'Unknown error',
@@ -117,7 +141,7 @@ const init = () => {
 		return true; // Indicate that we will send a response asynchronously
 	});
 
-	controller.state.subscribe(state => {
+	controller.connectionState.subscribe(state => {
 		if (state === 'idle') {
 			sendMessage({ action: Message.ClearRoom });
 		}
@@ -137,7 +161,7 @@ const init = () => {
 			roomId: initialRoomId,
 		});
 	} catch (error) {
-		console.error('Error joining room from URL:', error);
+		log.error('Error joining room from URL:', error);
 	}
 };
 

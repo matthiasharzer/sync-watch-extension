@@ -1,63 +1,34 @@
 type Subscriber<T> = (value: T) => void;
 type Unsubscribe = () => void;
 
-interface ReadOnlyObservable<T> {
-	readonly value: T;
-	next(): Promise<T>;
+interface ReadonlySubscribable<T> {
 	subscribe(subscriber: Subscriber<T>, includeCurrentValue: boolean): Unsubscribe;
 	unsubscribe(subscriber: Subscriber<T>): void;
 }
 
+type ReadOnlyFeed<T> = ReadonlySubscribable<T>;
+interface ReadWriteFeed<T> extends ReadOnlyFeed<T> {
+	readonly latestValue: T;
+	publish(value: T): void;
+}
+
+type ReadOnlyObservable<T> = ReadonlySubscribable<T>;
 interface ReadWriteObservable<T> extends ReadOnlyObservable<T> {
+	readonly value: T;
 	set(value: T): void;
 }
 
-class Observable<T> implements ReadWriteObservable<T> {
-	protected observableValue: T;
-	protected subscribers: Subscriber<T>[] = [];
+class Subscribable<T> {
+	private subscribers: Subscriber<T>[] = [];
 
-	constructor(initialValue: T) {
-		this.observableValue = initialValue;
-	}
-
-	protected notifySubscribers() {
+	notifySubscribers(value: T) {
 		for (const subscriber of this.subscribers) {
-			subscriber(this.observableValue);
+			subscriber(value);
 		}
 	}
 
-	get value() {
-		return this.observableValue;
-	}
-
-	set value(value: T) {
-		this.set(value);
-	}
-
-	set(value: T) {
-		if (this.observableValue === value) {
-			return;
-		}
-
-		this.observableValue = value;
-		this.notifySubscribers();
-	}
-
-	next(): Promise<T> {
-		return new Promise(resolve => {
-			const unsubscribe = this.subscribe(value => {
-				resolve(value);
-				unsubscribe();
-			}, false);
-		});
-	}
-
-	subscribe(subscriber: Subscriber<T>, includeCurrentValue: boolean): Unsubscribe {
+	subscribe(subscriber: Subscriber<T>): Unsubscribe {
 		this.subscribers.push(subscriber);
-
-		if (includeCurrentValue) {
-			subscriber(this.observableValue);
-		}
 
 		return () => this.unsubscribe(subscriber);
 	}
@@ -71,11 +42,85 @@ class Observable<T> implements ReadWriteObservable<T> {
 			this.unsubscribe(subscriber);
 		}
 	}
+}
 
-	hostConnected(): void {
-		// no-op
+class Feed<T> implements ReadWriteFeed<T> {
+	protected latestFeedValue: T;
+	protected subs = new Subscribable<T>();
+
+	constructor(initialValue: T) {
+		this.latestFeedValue = initialValue;
+	}
+
+	get latestValue() {
+		return this.latestFeedValue;
+	}
+
+	publish(value: T) {
+		if (this.latestFeedValue === value) {
+			return;
+		}
+
+		this.latestFeedValue = value;
+		this.subs.notifySubscribers(value);
+	}
+
+	subscribe(subscriber: Subscriber<T>, includeLatestValue: boolean): Unsubscribe {
+		if (includeLatestValue) {
+			subscriber(this.latestFeedValue);
+		}
+
+		return this.subs.subscribe(subscriber);
+	}
+
+	unsubscribe(subscriber: Subscriber<T>) {
+		this.subs.unsubscribe(subscriber);
+	}
+
+	disconnect() {
+		this.subs.disconnect();
 	}
 }
 
-export type { ReadOnlyObservable, ReadWriteObservable, Subscriber, Unsubscribe };
-export { Observable };
+class Observable<T> implements ReadWriteObservable<T> {
+	protected feed: Feed<T>;
+
+	constructor(initialValue: T) {
+		this.feed = new Feed(initialValue);
+	}
+
+	get value() {
+		return this.feed.latestValue;
+	}
+
+	set(value: T) {
+		if (this.feed.latestValue === value) {
+			return;
+		}
+
+		this.feed.publish(value);
+	}
+
+	subscribe(subscriber: Subscriber<T>, includeLatestValue: boolean): Unsubscribe {
+		return this.feed.subscribe(subscriber, includeLatestValue);
+	}
+
+	unsubscribe(subscriber: Subscriber<T>) {
+		this.feed.unsubscribe(subscriber);
+	}
+
+	disconnect() {
+		this.feed.disconnect();
+	}
+}
+
+export type {
+	ReadOnlyFeed,
+	ReadOnlyObservable,
+	ReadWriteFeed,
+	ReadWriteObservable,
+	Subscriber,
+	Unsubscribe,
+};
+
+export { Feed, Observable };
