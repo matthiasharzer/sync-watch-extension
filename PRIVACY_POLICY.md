@@ -24,4 +24,4 @@ The Extension is entirely open-source. You are welcome to review the source code
 If we ever change our practices regarding data transmission or storage, this Privacy Policy will be updated accordingly.
 
 ## 5. Contact
-If you have any questions or concerns about this Privacy Policy, please contact: [Insert Email or Link to GitHub Issues]
+If you have any questions or concerns about this Privacy Policy, please contact: matthias.harzer03@gmail.com
