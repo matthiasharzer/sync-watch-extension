@@ -26,15 +26,20 @@ class BitmovinVideoPlayerSyncStrategy implements VideoPlayerSyncStrategy {
 	}
 
 	async handleSeek(video: HTMLVideoElement, progress: number): Promise<void> {
+		const port = this.backgroundPort;
 		return new Promise(resolvePromise => {
-			this.backgroundPort.postMessage({
+			port.postMessage({
 				action: Port.BackgroundToContent.Messages.SeekBitmovin,
 				progress,
 			});
 
 			const resolve = () => {
 				video.currentTime = progress;
-				this.backgroundPort.onMessage.removeListener(handleResponse);
+				try {
+					port.onMessage.removeListener(handleResponse);
+				} catch {
+					// Ignore if listener was already removed or port was disconnected
+				}
 				clearTimeout(timeoutId);
 				resolvePromise();
 			};
@@ -57,7 +62,7 @@ class BitmovinVideoPlayerSyncStrategy implements VideoPlayerSyncStrategy {
 				}
 			};
 
-			this.backgroundPort.onMessage.addListener(handleResponse);
+			port.onMessage.addListener(handleResponse);
 		});
 	}
 
