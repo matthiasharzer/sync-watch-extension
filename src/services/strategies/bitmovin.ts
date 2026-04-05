@@ -6,10 +6,19 @@ import type { VideoPlayerSyncStrategy } from './strategy';
 const ignore = () => {};
 
 class BitmovinVideoPlayerSyncStrategy implements VideoPlayerSyncStrategy {
-	private backgroundPort: chrome.runtime.Port;
+	private _backgroundPort: chrome.runtime.Port | null = null;
 
-	constructor() {
-		this.backgroundPort = chrome.runtime.connect({ name: Port.BackgroundToContent.Name });
+	get backgroundPort(): chrome.runtime.Port {
+		if (this._backgroundPort) {
+			return this._backgroundPort;
+		}
+
+		this._backgroundPort = chrome.runtime.connect({ name: Port.BackgroundToContent.Name });
+		this._backgroundPort.onDisconnect.addListener(() => {
+			log.warn('Background port disconnected, resetting connection');
+			this._backgroundPort = null;
+		});
+		return this._backgroundPort;
 	}
 
 	ignoredSeekActions(): PlayerAction[] {
@@ -17,15 +26,20 @@ class BitmovinVideoPlayerSyncStrategy implements VideoPlayerSyncStrategy {
 	}
 
 	async handleSeek(video: HTMLVideoElement, progress: number): Promise<void> {
+		const port = this.backgroundPort;
 		return new Promise(resolvePromise => {
-			this.backgroundPort.postMessage({
+			port.postMessage({
 				action: Port.BackgroundToContent.Messages.SeekBitmovin,
 				progress,
 			});
 
 			const resolve = () => {
 				video.currentTime = progress;
-				this.backgroundPort.onMessage.removeListener(handleResponse);
+				try {
+					port.onMessage.removeListener(handleResponse);
+				} catch {
+					// Ignore if listener was already removed or port was disconnected
+				}
 				clearTimeout(timeoutId);
 				resolvePromise();
 			};
@@ -48,7 +62,7 @@ class BitmovinVideoPlayerSyncStrategy implements VideoPlayerSyncStrategy {
 				}
 			};
 
-			this.backgroundPort.onMessage.addListener(handleResponse);
+			port.onMessage.addListener(handleResponse);
 		});
 	}
 
