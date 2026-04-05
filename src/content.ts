@@ -14,7 +14,7 @@ const customStrategies: Record<string, VideoPlayerSyncStrategy> = {
 	'(?:^|\\.)crunchyroll\\.com$': new BitmovinVideoPlayerSyncStrategy(),
 };
 
-const controller: Controller = new Controller();
+const controller = new Controller();
 
 const handleCreateRoom = async () => {
 	try {
