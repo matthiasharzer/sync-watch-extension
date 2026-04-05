@@ -12,7 +12,8 @@
 		"strictNullChecks": true,
 		"moduleResolution": "Bundler",
 		"moduleDetection": "force",
-		"lib": ["ESNext", "DOM"]
+		"lib": ["ESNext", "DOM"],
+		"types": ["chrome"]
 	},
 	"include": ["./src/**/*.ts"]
 }
