@@ -13,9 +13,7 @@
 		"moduleResolution": "Bundler",
 		"moduleDetection": "force",
 		"lib": ["ESNext", "DOM"],
-		"types": [
-			"chrome"
-		]
+		"types": ["chrome"]
 	},
-	"include": ["./src/**/*.ts"],
+	"include": ["./src/**/*.ts"]
 }
