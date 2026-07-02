@@ -2,24 +2,44 @@ version: 2
 updates:
   - package-ecosystem: npm
     directory: "/"
+    cooldown:
+      default-days: 7
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    assignees:
+      - matthiasharzer
     labels:
       - Dependencies
-    versioning-strategy: increase
     allow:
       - dependency-type: direct
     commit-message:
       prefix: chore
-      prefix-development: chore
+    groups:
+      npm:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: "github-actions"
     directory: "/"
+    cooldown:
+      default-days: 7
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    assignees:
+      - matthiasharzer
     labels:
       - Dependencies
     commit-message:
       prefix: chore
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
