@@ -10,8 +10,8 @@
 		"analyze": "biome check --error-on-warnings"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.5.1",
-		"@types/chrome": "0.2.0",
+		"@biomejs/biome": "2.5.2",
+		"@types/chrome": "0.2.2",
 		"esbuild": "0.28.1",
 		"typescript": "6.0.3"
 	}
